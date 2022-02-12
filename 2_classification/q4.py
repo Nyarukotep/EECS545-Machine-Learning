@@ -24,9 +24,12 @@ def nb_train(matrix, category):
     N = matrix.shape[1]
     
     ############################
-    # Implement your code here #
+    spam = matrix[category == 1, :]
+    nospam = matrix[category == 0, :]
+    state['spamlap'] = (spam.sum(axis = 0) + 1) / (np.sum(spam.sum(axis = 1)) + N)
+    state['nospamlap'] = (nospam.sum(axis = 0) + 1) / (np.sum(nospam.sum(axis = 1)) + N)
+    state['p'] = spam.shape[0]/(spam.shape[0]+nospam.shape[0])
     ############################
-    
     return state
 
 def nb_test(matrix, state):
@@ -34,15 +37,16 @@ def nb_test(matrix, state):
     output = np.zeros(matrix.shape[0])
     
     ############################
-    # Implement your code here #
+    phi = state['p']
+    output[matrix @ np.log(state['spamlap']) + np.log(phi) > matrix @ np.log(state['nospamlap']) + np.log(1-phi)] = 1
     ############################
-    
     return output
 
 def evaluate(output, label):
     # Use the code below to obtain the accuracy of your algorithm
     error = (output != label).sum() * 1. / len(output)
-    print('Error: {:2.4f}%'.format(100*error))
+    print('Error: ', 100*error, '%')
+    return error
 
 def main():
     # Note1: tokenlists (list of all tokens) from MATRIX.TRAIN and MATRIX.TEST are identical
@@ -59,7 +63,24 @@ def main():
     # Test and evluate
     prediction = nb_test(dataMatrix_test, state)
     evaluate(prediction, category_test)
-
+    list = np.argsort(state['spamlap']/state['nospamlap'])[-5:]
+    print('The 5 tokens that are most indicative of the SPAM class: ')
+    for i in range(5):
+        print(tokenlist[list[4-i]])
+    train_sizes = [50, 100, 200, 400, 800, 1400]
+    errors = np.ones(6)
+    for i in range(6):
+        file = 'q4_data/MATRIX.TRAIN.'+str(train_sizes[i])
+        dataMatrix_train, tokenlist, category_train = readMatrix(file)
+        state = nb_train(dataMatrix_train, category_train)
+        prediction = nb_test(dataMatrix_test, state)
+        errors[i] = evaluate(prediction, category_test)
+    plt.plot(train_sizes, errors*100)
+    plt.xlim((0, 1500))
+    plt.ylim((0, 4))
+    plt.xlabel('Training size')
+    plt.ylabel('Error %')
+    plt.show()
 if __name__ == "__main__":
     main()
         
