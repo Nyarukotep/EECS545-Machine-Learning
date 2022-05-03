@@ -1,0 +1,2 @@
+model_checkpoint_path: "model_weights_gru_20170731_800"
+all_model_checkpoint_paths: "model_weights_gru_20170731_800"
